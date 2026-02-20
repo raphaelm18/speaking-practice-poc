@@ -2,6 +2,7 @@ import streamlit as st
 
 # Import your existing analysis function (and task_context/prompt remain in app.py)
 from app import analyze_speaking_sample
+import traceback 
 
 TASKS = {
     "Elephants Spraying Water": {
@@ -56,7 +57,7 @@ st.caption("Teacher-facing prototype for evaluating oral language using a struct
 #st.write("image exists:", os.path.exists("assets/elephants.jpg"))
 #st.image("assets/elephants.jpg", caption="DEBUG elephant", use_container_width=True)
 #st.write("assets contents:", os.listdir("assets"))
-#st.caption("Prompt: Look at the picture and describe what is happening.")
+#mast.caption("Prompt: Look at the picture and describe what is happening.")
 
 default_text = "I see two elephants at the zoo. One elephant is spraying water. The other elephant is smaller."
 
@@ -67,11 +68,20 @@ transcript = st.text_area(
     help="Paste what the student said (transcribed text).",
 )
 
+
 if st.button("Analyze", type="primary"):
     if not transcript.strip():
         st.warning("Please paste a transcript first.")
     else:
-        with st.spinner("Analyzing..."):
-            result = analyze_speaking_sample(transcript.strip())
-        st.subheader("Teacher-Readable Summary & Rubric")
-        st.markdown(result)
+        try:
+            with st.spinner("Analyzing..."):
+                result = analyze_speaking_sample(transcript.strip())
+
+            st.subheader("Teacher-Readable Summary & Rubric")
+            st.markdown(result)
+
+        except Exception as e:
+            st.error("Something went wrong during analysis.")
+            st.error(str(e))
+            st.exception(e)  # full traceback
+            st.code(traceback.format_exc())
