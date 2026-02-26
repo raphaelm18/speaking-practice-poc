@@ -68,6 +68,8 @@ transcript = st.text_area(
     help="Paste what the student said (transcribed text).",
 )
 
+word_count = len(transcript.split()) if transcript.strip() else 0
+st.caption(f"{word_count} words")
 
 if st.button("Analyze", type="primary"):
     if not transcript.strip():
