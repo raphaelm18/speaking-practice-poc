@@ -15,11 +15,14 @@ def analyze_speaking_sample(transcript_text: str, task_context: str) -> str:
     Returns analysis in ≤12 lines total, using LLM with
     explicit guardrails against overclaiming.
     """
-    api_key = os.getenv("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY", None)
-    client = OpenAI(api_key=api_key)
-    
-    # Clean transcript
-    transcript_clean = transcript_text.strip()
+        try:
+            api_key = os.getenv("OPENAI_API_KEY") or st.secrets["OPENAI_API_KEY"]
+        except:
+            api_key = os.getenv("OPENAI_API_KEY")
+        client = OpenAI(api_key=api_key)
+        
+        # Clean transcript
+        transcript_clean = transcript_text.strip()
     
     # Construct prompt with rubric definitions and guardrails
     prompt = f"""You are analyzing an ELL student's speaking transcript for a teacher.
