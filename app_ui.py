@@ -75,7 +75,9 @@ if st.button("Analyze", type="primary"):
     else:
         try:
             with st.spinner("Analyzing..."):
-                result = analyze_speaking_sample(transcript.strip())
+               result = analyze_speaking_sample(
+                     transcript.strip(),
+                     task["task_context"])
 
             st.subheader("Teacher-Readable Summary & Rubric")
             st.markdown(result)

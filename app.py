@@ -3,7 +3,8 @@ load_dotenv()
 
 
 import os
-from openai import OpenAI
+import streamlit as st
+
 
 
 def analyze_speaking_sample(transcript_text: str, task_context: str) -> str:
@@ -14,7 +15,8 @@ def analyze_speaking_sample(transcript_text: str, task_context: str) -> str:
     Returns analysis in ≤12 lines total, using LLM with
     explicit guardrails against overclaiming.
     """
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    api_key = os.getenv("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY")
+    client = OpenAI(api_key=api_key)
     
     # Clean transcript
     transcript_clean = transcript_text.strip()
