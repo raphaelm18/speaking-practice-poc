@@ -47,8 +47,6 @@ RUBRIC DIMENSIONS (scored):
 Definition of "on topic":
 The student's statements relate directly to the task context and subject being described.
 - Beginning: Includes clear off-topic content or shifts away from the task.
-  Example patterns: unrelated personal stories; responding to a different subject or activity.
-- Developing: Stays on topic but includes minor tangents or loosely related ideas
   that slightly distract from the main focus.
 - Strong: Fully stays on topic throughout the response.
   All ideas relate directly to the task context or subject being described.
