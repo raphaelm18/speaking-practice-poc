@@ -1,9 +1,9 @@
 import streamlit as st
-
-# Import your existing analysis function (and task_context/prompt remain in app.py)
-from app import analyze_speaking_sample
+import traceback
 from app import analyze_speaking_sample, transcribe_audio
-import traceback 
+
+st.set_page_config(page_title="Speaking Practice POC", layout="centered")
+
 
 # --- Language + Task (Spanish-first) ---
 language = st.selectbox(
@@ -107,14 +107,20 @@ st.caption(
     f"Audio captured: {'Yes' if 'audio_bytes' in st.session_state else 'No'}"
 )#import os
 
+import traceback
+
 if transcribe_clicked:
-    if "audio_bytes" in st.session_state:
-        st.session_state["transcript"] = transcribe_audio(
-            st.session_state["audio_bytes"],
-            language,
-        )
-    else:
+    if "audio_bytes" not in st.session_state:
         st.warning("Please record audio before transcribing.")
+    else:
+        try:
+            st.session_state["transcript"] = transcribe_audio(
+                st.session_state["audio_bytes"],
+                language,
+            )
+        except Exception as e:
+            st.error("Transcription failed:")
+            st.code(traceback.format_exc())
 #st.write("cwd:", os.getcwd())
 #s.path.exists("assets"))
 #st.write("assets contents:", os.listdir("assets"))
