@@ -4,9 +4,41 @@ load_dotenv()
 import os
 import streamlit as st
 from openai import OpenAI
+import tempfile
+def _get_openai_api_key() -> str:
+    try:
+        return os.getenv("OPENAI_API_KEY") or st.secrets["OPENAI_API_KEY"]
+    except Exception:
+        return os.getenv("OPENAI_API_KEY")
+
+_API_KEY = _get_openai_api_key()
+client = OpenAI(api_key=_API_KEY)
+def transcribe_audio(audio_bytes: bytes, language: str) -> str:
+    """
+    audio_bytes: WAV bytes from st.audio_input().getvalue()
+    language: "Spanish" or "English"
+    """
+    lang_hint = "es" if language == "Spanish" else "en"
+
+    with tempfile.NamedTemporaryFile(suffix=".wav", delete=True) as f:
+        f.write(audio_bytes)
+        f.flush()
+
+        with open(f.name, "rb") as audio_file:
+            result = client.audio.transcriptions.create(
+                model="gpt-4o-mini-transcribe",
+                file=audio_file,
+                language=lang_hint,
+            )
+
+    return (result.text or "").strip()
 
 
-def analyze_speaking_sample(transcript_text: str, task_context: str) -> str:
+def analyze_speaking_sample(
+    transcript_text: str,
+    task_context: str,
+    language: str = "English",
+) -> str:
     """
     Takes a student speaking transcript and returns a
     teacher-readable summary and rubric snapshot.
@@ -14,17 +46,20 @@ def analyze_speaking_sample(transcript_text: str, task_context: str) -> str:
     Returns analysis in <=12 lines total, using LLM with
     explicit guardrails against overclaiming.
     """
-    try:
-        api_key = os.getenv("OPENAI_API_KEY") or st.secrets["OPENAI_API_KEY"]
-    except Exception:
-        api_key = os.getenv("OPENAI_API_KEY")
-
-    client = OpenAI(api_key=api_key)
-
+    
     # Clean transcript
     transcript_clean = transcript_text.strip()
 
     # Construct prompt with rubric definitions and guardrails
+    spanish_lens = ""
+    if language == "Spanish":
+        spanish_lens = """
+
+SPANISH-SPECIFIC LENS:
+- Pay attention to subject–verb agreement, verb tense consistency, and the use of connectors (e.g., "y", "porque", "después").
+- Offer 1–2 specific, actionable suggestions that would make the Spanish clearer or more natural, without over-correcting or nitpicking minor errors.
+"""
+
     prompt = f"""You are analyzing an ELL student's speaking transcript for a teacher.
 
 TASK CONTEXT (what the student was asked to respond to):
@@ -60,6 +95,8 @@ GUARDRAILS:
 - Use conservative language. Avoid definitive claims.
 - Only analyze what is present in the transcript.
 
+{spanish_lens}
+
 OUTPUT FORMAT (MUST be <=12 lines total):
 - Lines 1-2: Summary (exactly 2 sentences referencing what the student says).
 - Lines 3-7: Compact rubric snapshot:
@@ -75,10 +112,22 @@ TRANSCRIPT TO ANALYZE:
 Begin your analysis:"""
 
     try:
+        if language == "Spanish":
+            system_message = (
+                "You are a careful, evidence-based ELL speaking analyst focusing on Spanish-speaking students. "
+                "You describe what the student does well by quoting their Spanish phrases directly and using cautious, teacher-friendly language in English. "
+                "You include 1–2 concrete, Spanish-specific suggestions (for example about agreement, verb tense, or connectors) without nitpicking or correcting every small error."
+            )
+        else:
+            system_message = (
+                "You are a careful, evidence-based ELL speaking analyst. "
+                "You always cite specific transcript evidence and use conservative language."
+            )
+
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are a careful, evidence-based ELL speaking analyst. You always cite specific transcript evidence and use conservative language."},
+                {"role": "system", "content": system_message},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.3,

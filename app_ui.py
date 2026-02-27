@@ -2,7 +2,22 @@ import streamlit as st
 
 # Import your existing analysis function (and task_context/prompt remain in app.py)
 from app import analyze_speaking_sample
+from app import analyze_speaking_sample, transcribe_audio
 import traceback 
+
+# --- Language + Task (Spanish-first) ---
+language = st.selectbox(
+    "Language",
+    ["Spanish", "English"],
+    index=0,
+)
+
+if language == "Spanish":
+    st.markdown("**Speaking Task (Spanish):** Describe the picture in Spanish.")
+    st.caption("Say what you see, where things are, and what is happening. Use full sentences.")
+else:
+    st.markdown("**Speaking Task (English):** Describe the picture in English (demo mode).")
+    st.caption("Say what you see, where things are, and what is happening. Use full sentences.")
 
 TASKS = {
     "Elephants Spraying Water": {
@@ -48,9 +63,58 @@ task_name = st.selectbox("Choose a task:", list(TASKS.keys()))
 task = TASKS[task_name]
 
 st.image(task["image"], use_container_width=True)
-st.caption("Prompt: Look at the picture and describe what is happening.")
+
+prompt_hint = (
+    "Prompt: Describe the image in Spanish."
+    if language == "Spanish"
+    else "Prompt: Look at the picture and describe what is happening."
+)
+st.caption(prompt_hint)
 st.caption("Teacher-facing prototype for evaluating oral language using a structured rubric.")
-#import os
+
+# --- Voice Recording ---
+st.subheader("Record Your Response")
+
+if "audio_widget_version" not in st.session_state:
+    st.session_state["audio_widget_version"] = 0
+
+audio = st.audio_input(
+    "Click to record",
+    sample_rate=16000,
+    key=f"audio_input_{st.session_state['audio_widget_version']}",
+)
+
+col1, col2 = st.columns(2)
+
+with col1:
+    redo_clicked = st.button("Redo Recording")
+
+with col2:
+    transcribe_clicked = st.button("Transcribe")
+
+if redo_clicked:
+    st.session_state.pop("audio_bytes", None)
+    st.session_state.pop("transcript", None)
+    st.session_state["audio_widget_version"] = (
+        st.session_state.get("audio_widget_version", 0) + 1
+    )
+    st.rerun()
+
+if audio is not None:
+    st.session_state["audio_bytes"] = audio.getvalue()
+
+st.caption(
+    f"Audio captured: {'Yes' if 'audio_bytes' in st.session_state else 'No'}"
+)#import os
+
+if transcribe_clicked:
+    if "audio_bytes" in st.session_state:
+        st.session_state["transcript"] = transcribe_audio(
+            st.session_state["audio_bytes"],
+            language,
+        )
+    else:
+        st.warning("Please record audio before transcribing.")
 #st.write("cwd:", os.getcwd())
 #s.path.exists("assets"))
 #st.write("assets contents:", os.listdir("assets"))
@@ -63,7 +127,7 @@ default_text = "I see two elephants at the zoo. One elephant is spraying water. 
 
 transcript = st.text_area(
     "Paste student transcript:",
-    value=default_text,
+    value=st.session_state.get("transcript", ""),
     height=180,
     help="Paste what the student said (transcribed text).",
 )
