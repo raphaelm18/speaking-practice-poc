@@ -1,3 +1,13 @@
+---
+title: Speaking & Listening Practice — POC
+emoji: 📚
+colorFrom: blue
+colorTo: green
+sdk: streamlit
+app_file: streamlit_app.py
+pinned: false
+---
+
 # Speaking & Listening Practice — POC
 
 Purpose:
